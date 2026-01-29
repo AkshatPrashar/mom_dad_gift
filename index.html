@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For Mom & Dad</title>
+    <style>
+        /* --- Reset & Base --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            /* Prevent selection while tapping rapidly */
+            -webkit-user-select: none;
+        }
+
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            /* Prevent scrolling during the game phase */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.2s ease;
+        }
+
+        body {
+            background-color: #f0f0f0;
+            /* Starting color */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* --- Main Game UI --- */
+        #game-container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+            /* For touch area */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* The Heart Button */
+        #heart-btn {
+            font-size: 80px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+            animation: heartbeat 1s infinite;
+        }
+
+        #heart-btn:active {
+            transform: scale(0.9);
+        }
+
+        @keyframes heartbeat {
+            0% {
+                transform: scale(1);
+            }
+
+            14% {
+                transform: scale(1.15);
+            }
+
+            28% {
+                transform: scale(1);
+            }
+
+            42% {
+                transform: scale(1.15);
+            }
+
+            70% {
+                transform: scale(1);
+            }
+        }
+
+        /* Percentage Text */
+        #meter-text {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Instructions */
+        #instructions {
+            position: absolute;
+            bottom: 50px;
+            width: 100%;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0.8;
+            animation: fadeInOut 3s infinite;
+        }
+
+        @keyframes fadeInOut {
+
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* --- Antigravity Images --- */
+        .memory-img {
+            position: absolute;
+            width: 100px;
+            /* Base size, will be randomized */
+            border: 8px solid white;
+            border-bottom: 24px solid white;
+            /* Polaroid style */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 5;
+            pointer-events: none;
+            /* Let clicks pass through */
+            will-change: transform, opacity;
+            object-fit: cover;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 0;
+                transform: translateY(0) rotate(var(--rot-start)) scale(0.8);
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-100vh) rotate(var(--rot-end)) scale(1);
+            }
+        }
+
+        /* --- Reveal Overlay --- */
+        #reveal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* High quality nature background as requested */
+            background: url('https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=1600&auto=format&fit=crop') center/cover no-repeat;
+            z-index: 100;
+            transform: translateY(-100%);
+            /* Hidden via transform */
+            transition: transform 1.5s cubic-bezier(0.77, 0, 0.175, 1);
+            overflow-y: auto;
+            /* Scrollable */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        #reveal-overlay.visible {
+            transform: translateY(0);
+        }
+
+        .letter-content {
+            /* Glassmorphism */
+            background: rgba(255, 255, 255, 0.386);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 15px;
+            /* Slightly more rounded */
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-top: 50px;
+            margin-bottom: 50px;
+            text-align: left;
+            position: relative;
+        }
+
+        .letter-content h1 {
+            font-family: 'Georgia', serif;
+            color: #d63384;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .letter-content p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.825);
+        }
+
+        .polaroid-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .static-polaroid {
+            background: rgba(255, 255, 255, 0.834);
+            padding: 10px 10px 30px 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: rotate(-2deg);
+        }
+
+        .static-polaroid:nth-child(even) {
+            transform: rotate(3deg);
+        }
+
+        .static-polaroid img {
+            max-width: 100%;
+            width: 120px;
+            display: block;
+        }
+
+        /* --- Confetti (Simple CSS only approach or JS? JS is better for burst) --- */
+        .confetti {
+            position: absolute;
+            background-color: #f00;
+            width: 10px;
+            height: 10px;
+            top: -10px;
+            z-index: 110;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Audio Element -->
+    <!-- Using a royalty free placeholder mp3. -->
+    <audio id="bg-music" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <!-- Main Game Container -->
+    <div id="game-container">
+        <div id="heart-btn">❤️</div>
+        <div id="meter-text">Love Meter: 0%</div>
+        <div id="instructions">Tap the heart to show your love!</div>
+    </div>
+
+    <!-- Reveal Overlay -->
+    <div id="reveal-overlay">
+        <div class="letter-content">
+            <h1>Happy Anniversary!</h1>
+            <p>Dear Mom & Dad,</p>
+            <p>Watching you two together has been the greatest lesson in love I could have ever asked for. Through all
+                the ups and downs, your bond has only grown stronger.</p>
+            <p>You’ve built a beautiful life and a loving family. Thank you for being my inspiration and my support
+                system.</p>
+            <p>Here's to many more years of laughter, joy, and togetherness. I love you both so much!</p>
+            <p>With love,<br>Jai and Juhi</p>
+
+            <div class="polaroid-gallery">
+                <div class="static-polaroid"><img src="mp-img1.jpeg" alt="Mom and Dad"></div>
+                <div class="static-polaroid"><img src="mp-img2.jpeg" alt="Mom and Dad"></div>
+                <div class="static-polaroid"><img src="mp-img3.jpeg" alt="Mom and Dad"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const CLICKS_TO_WIN = 20; // Total clicks needed
+        const START_BG = { r: 240, g: 240, b: 240 }; // #f0f0f0
+        const END_BG = { r: 255, g: 105, b: 180 };   // #ff69b4 (HotPink)
+        const MEMORY_IMAGES = [
+            'mp-img4.jpeg',
+            'mp-img5.jpeg',
+            'mp-img5.jpeg',
+            'mp-img7.jpeg',
+            'mp-img9.jpeg',
+            'mp-img10.jpeg',
+            'mp-img11.jpeg',
+            'mp-img12.jpeg',
+            'mp-img13.jpeg',
+            'mp-img14.jpeg',
+            'mp-img15.jpeg',
+            'mp-img16.jpeg',
+            'mp-img8.jpeg'
+        ];
+
+        // --- State ---
+        let clickCount = 0;
+        let isRevealed = false;
+        let audioStarted = false;
+
+        // --- Elements ---
+        const heartBtn = document.getElementById('heart-btn');
+        const meterText = document.getElementById('meter-text');
+        const body = document.body;
+        const audio = document.getElementById('bg-music');
+        const revealOverlay = document.getElementById('reveal-overlay');
+        const gameContainer = document.getElementById('game-container');
+
+        // --- Interaction Handler ---
+        function handleInteraction(e) {
+            if (isRevealed) return;
+
+            // Handle Audio Start (User Gesture Requirement)
+            if (!audioStarted) {
+                audio.volume = 0.1;
+                audio.play().catch(err => console.log("Audio play blocked:", err));
+                audioStarted = true;
+            }
+
+            // Increment Progress
+            clickCount++;
+            let percentage = Math.min((clickCount / CLICKS_TO_WIN) * 100, 100);
+
+            // Visual Updates
+            updateVisuals(percentage);
+
+            // Audio Updates
+            updateAudio(percentage);
+
+            // Spawn Memory
+            // Use touch coordinates if available, else mouse
+            let x, y;
+            if (e.type === 'touchstart') {
+                x = e.touches[0].clientX;
+                y = e.touches[0].clientY;
+            } else {
+                x = e.clientX;
+                y = e.clientY;
+            }
+            spawnMemoryImage(x, y);
+
+            // Check Win Condition
+            if (clickCount >= CLICKS_TO_WIN) {
+                triggerReveal();
+            }
+        }
+
+        // --- Visual & Audio Logic ---
+        function updateVisuals(percentage) {
+            // Update Text
+            meterText.innerText = `Love Meter: ${Math.floor(percentage)}%`;
+            meterText.style.color = percentage > 50 ? 'white' : '#333';
+
+            // Interpolate Background Color
+            const r = interpolate(START_BG.r, END_BG.r, percentage);
+            const g = interpolate(START_BG.g, END_BG.g, percentage);
+            const b = interpolate(START_BG.b, END_BG.b, percentage);
+            body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+
+            // Accelerate Heartbeat
+            // Normal is 1s. At 100%, make it 0.3s
+            const newDuration = 1 - (0.7 * (percentage / 100));
+            heartBtn.style.animationDuration = `${newDuration}s`;
+        }
+
+        function updateAudio(percentage) {
+            // Volume logic: Start 0.1, End 1.0
+            const volume = 0.1 + (0.9 * (percentage / 100));
+            if (audioStarted) {
+                audio.volume = Math.min(volume, 1.0);
+            }
+        }
+
+        function interpolate(start, end, percent) {
+            return Math.round(start + (end - start) * (percent / 100));
+        }
+
+        // --- Antigravity System ---
+        function spawnMemoryImage(x, y) {
+            const imgUrl = MEMORY_IMAGES[Math.floor(Math.random() * MEMORY_IMAGES.length)];
+            const img = document.createElement('img');
+            img.src = imgUrl;
+            img.classList.add('memory-img');
+
+            // Randomize props
+            const size = 60 + Math.random() * 80; // 60px to 140px
+            const rotationStart = (Math.random() * 40) - 20; // -20 to 20 deg
+            const rotationEnd = (Math.random() * 180) - 90; // Spin while floating
+            const duration = 3 + Math.random() * 2; // 3-5s
+
+            // Styles
+            img.style.width = `${size}px`;
+            img.style.left = `${x - size / 2}px`;
+            img.style.top = `${y - size / 2}px`;
+            img.style.setProperty('--rot-start', `${rotationStart}deg`);
+            img.style.setProperty('--rot-end', `${rotationEnd}deg`);
+            img.style.animation = `floatUp ${duration}s ease-in forwards`;
+
+            document.body.appendChild(img);
+
+            // Cleanup
+            setTimeout(() => {
+                img.remove();
+            }, duration * 1000);
+        }
+
+        // --- Reveal Sequence ---
+        function triggerReveal() {
+            isRevealed = true;
+
+            // Hide game UI (fade out)
+            gameContainer.style.transition = 'opacity 1s';
+            gameContainer.style.opacity = '0';
+
+            // Confetti Burst
+            fireConfetti();
+
+            // Slide down letter after short delay
+            setTimeout(() => {
+                revealOverlay.classList.add('visible');
+            }, 500);
+        }
+
+        function fireConfetti() {
+            const colors = ['#ff0000', '#ffffff', '#ff69b4', '#ffd700'];
+            for (let i = 0; i < 100; i++) {
+                const conf = document.createElement('div');
+                conf.classList.add('confetti');
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.top = -10 + 'px';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+                // Physics-ish animation
+                const fallDuration = 2 + Math.random() * 3;
+                conf.style.transition = `top ${fallDuration}s ease-out, transform ${fallDuration}s linear`;
+
+                document.body.appendChild(conf);
+
+                // Trigger fall
+                requestAnimationFrame(() => {
+                    conf.style.top = '110vh';
+                    conf.style.transform = `rotate(${Math.random() * 360 + 720}deg)`;
+                });
+
+                // Cleanup
+                setTimeout(() => conf.remove(), fallDuration * 1000);
+            }
+        }
+
+        // --- Event Listeners ---
+        // Using 'pointerdown' to handle both click and touch better, 
+        // but 'click' is safer for audio policies. Let's use click for the button specific logic.
+        // Actually, for rapid tapping on mobile, 'touchstart' is more responsive (no 300ms delay),
+        // but might trigger default actions. 
+        // We'll stick to a simple click handler on the container to catch taps anywhere?
+        // No, spec says "The Button... Every click increases". 
+        // But "Spawn a new image element at the cursor/tap position".
+        // If we click the heart, the cursor is at center. 
+        // Let's attach listener to the whole interactive area or just the button?
+        // "Tapping IT fills a Love Meter".
+        // Let's allow tapping ANYWHERE for better UX, or just the heart?
+        // "The user sees a heart button. Tapping it..." -> Implies button only.
+        // But for "Spawn... at cursor position", if they click the heart, it obscures the spawn.
+        // I'll add the listener to the whole body or container for better "Antigravity" feel (images floating from tap), 
+        // but logically it should drive the meter.
+        // Let's make the HEART the primary trigger, but maybe allow the whole screen to be the button?
+        // Let's stick to the Heart Button as the main trigger to follow spec strictly, 
+        // but I will also attach `mousedown`/`touchstart` to the heart to get coordinates specifically.
+
+        heartBtn.addEventListener('click', handleInteraction);
+        // Add touchstart to prevent double handling if we used both, but 'click' covers both validly.
+        // However, for the 'coordinate' requirement, 'click' event gives coordinates too.
+
+        // Prevent default zoom on double tap
+        document.addEventListener('touchstart', function (event) {
+            if (event.touches.length > 1) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
+    </script>
+</body>
+
+</html>
