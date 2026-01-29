@@ -28,7 +28,7 @@ A single-page, interactive website designed as a digital anniversary gift. This 
 
 If you are using this template for your own gift, here is how to personalize it:
 
-### 1. Change the Floating Photos (Antigravity)
+### 1. Change the Floating Photos
 Open `index.html` and look for the JavaScript section. Find the `memoryImages` array:
 ```javascript
 const memoryImages = [
